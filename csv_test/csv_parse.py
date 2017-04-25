@@ -8,6 +8,8 @@ import os # filesystem access
 
 valid_file = False 
 
+# test
+
 def check_if_is_csv(input):
   if not input.endswith('.csv'):
     while not input.endswith('.csv'):

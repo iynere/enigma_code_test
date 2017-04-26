@@ -5,47 +5,48 @@
 import csv # csv parsing
 import sys # command line arguments
 import os # filesystem access
+import string # string manipulation
 
-valid_file = False 
+valid_file = False
+file = None
 
-# test
+'''
+csv_check checks two things:
+1) is it a .csv file? &
+2) does the file exist at the provided path?
+for now we will assume that if the file exists & ends with .csv, it is actually a .csv file
+'''
 
-def check_if_is_csv(input):
-  if not input.endswith('.csv'):
-    while not input.endswith('.csv'):
-      print "Sorry, that doesn't appear to be a valid .csv file!\nPlease provide the relative or absolute path to a .csv file:"
-      input = raw_input()
-  return input
-    
+def csv_check(input):
+	while not input.endswith(".csv") or not os.path.isfile(input):
+		if input.endswith("csv"):
+			print "Sorry, that .csv file doesn't seem to exist!"
+		else:
+			print "Sorry, that doesn't seem to be a .csv file!"
+		print "Please provide the relative or absolute path to a .csv file:"
+		input = string.rstrip(raw_input())
+	return input	
+	
+def csv_parse(file):
+	reader = csv.reader(file)
+	for row in reader:
+		print(" ".join(row))
+	
+	# 'file' here will be a valid relative or absolute path to the .csv file
+		
 # run this loop until we get a valid .csv file, one way or another
 while not valid_file:
-  if len(sys.argv) > 1:
-    input = sys.argv[1]
-    check_if_is_csv(input)
-  else: # i.e., user provided no input
-    print "Welcome to r0se's .csv parser! Please provide the relative or absolute path to a .csv file:"
-    input = raw_input()
-    check_if_is_csv(input)
-  valid_file = True
-    
-  
-
-
-# if input.
-# = open(sys.argv[1], 'rt')
-
-# 'r'—open for reading
-# 't'—text mode
-# (these are both default settings and not strictly required)
-
-# why argv[1]? argv[0] is the script itself ('csv_parse.py'), as passed to the python interpreter ('python'); thus, the input to the script is actually the 2nd argument
-
-# try:
-#   reader = csv.reader(input)
-#   # read the csv file & save it as a variable 'reader'
-  
-#   for row in reader:
-#     print row
-    
-# finally:
-#   input.close()
+	# for now we will assume that we only ever want to process one .csv file at a time & will ignore any additional arguments passed to csv_parse
+	if len(sys.argv) > 1:
+		input = string.rstrip(sys.argv[1])
+		# why rstrip() here? because when dragging a file into the terminal window to provide its path as a string, the terminal seems to append a space (on a Mac, at least)
+		file = csv_check(input)
+	else: # i.e., user provided no input
+		print "Welcome to r0se's .csv parser! Please provide the relative or absolute path to a .csv file:"
+		input = string.rstrip(raw_input())
+		file = csv_check(input)
+	valid_file = True
+	csv_parse(file)
+	
+# now we can use our actual parsing function
+# how to do template strings: print 'this is the file: %s' % file

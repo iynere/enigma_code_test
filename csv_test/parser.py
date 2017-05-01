@@ -6,9 +6,13 @@ import csv # csv parsing
 import sys # command line arguments
 import os # filesystem access
 import string # string manipulation
-import re # for replacing spaces & newlines
+import re # for replacing spaces & newlines, etc.
 
-# GLOBALS
+# just for fun
+import requests
+from bs4 import BeautifulSoup as bs
+
+# VARIABLES
 valid_file = False
 file = None
 path = ""
@@ -32,12 +36,18 @@ def check(input):
   return input
         
 def find_path(file):
-  # for use by the write() function—makes sure files are outputted in the same directory as the source .csv file
+  '''
+  for use by the write() function;
+  makes sure files are outputted in the same directory as the source .csv file
+  '''
   if re.search(r"/", file) == None:
     # this indicates that the user provided a relative path
     path = os.getcwd()
   else:
-    # absolute path: create a slice excluding the actual name of the file to get the directory
+    '''
+    absolute path:
+    create a slice excluding the actual name of the file to get the directory
+    '''
     path = "/".join(file.split("/")[:-1]) 
   return path
   
@@ -50,10 +60,15 @@ def read(file):
   
 def read_states(file):
   # read the states .csv file & store it in the 'states' dictionary object
-  with open(file) as file_obj:
-    reader = csv.DictReader(file_obj, delimiter=",")
-    for line in reader:
-      states[line["state_abbr"]] = line["state_name"]
+  if os.path.isfile(file):
+    with open(file) as file_obj:
+      reader = csv.DictReader(file_obj, delimiter=",")
+      for line in reader:
+        states[line["state_abbr"]] = line["state_name"]
+  else:
+    # just for fun, if the file isn't there, scrape the data from the web
+    for state in map(lambda state: state.split(" - "), str(bs(requests.get("http://abbreviations.yourdictionary.com/articles/state-abbrev.html").text, "html.parser").ul)[8:-10].split("</li><li>")):
+      states[state[1]] = state[0]
 
 def add_leading_zeros(date_arr):
   # some otherwise valid dates have single-digit strings for days/months 1-9
@@ -104,7 +119,10 @@ def parse(data):
     line["bio"] = re.sub(r"\s+", " ", line["bio"].strip())
     # 2) substitute full state names for two-letter state abbreviations
     line["state"] = states[line["state"]]
-    # 3) reformat valid dates to align with ISO 8601; move invalid dates into a new adjacent 'start_date_description' field
+    '''
+    3) reformat valid dates to align with ISO 8601;
+    move invalid dates into a new adjacent 'start_date_description' field
+    '''
     date = normalize(line["start_date"])
     if date["is_valid"]:
       line["start_date"] = date["data"]
@@ -120,10 +138,11 @@ def write(file, data):
   output = path + "/" + file # complete path to output file
   with open(output, "wb") as output:
     '''
-    since we're reading/writing with dictionaries, we need to specify field order (although .DictReader & .DictWriter do return 'ordered dictionaries' by default in Python 3.6+)
+    since we're working with dictionaries, we need to specify field order
+    (.DictReader/.DictWriter do return 'ordered dictionaries' in Python 3.6+)
     '''
-    fieldnames = ["name", "gender", "birthdate", "address", "city", "state", "zipcode", "email", "bio", "job", "start_date", "start_date_description"]
-    writer = csv.DictWriter(output, fieldnames)
+    ordered_fields = ["name", "gender", "birthdate", "address", "city", "state", "zipcode", "email", "bio", "job", "start_date", "start_date_description"]
+    writer = csv.DictWriter(output, ordered_fields)
     writer.writeheader()
     for line in data:
       writer.writerow(line)

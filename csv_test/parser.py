@@ -54,6 +54,7 @@ def read_states(file):
     reader = csv.DictReader(file_obj, delimiter=",")
     for line in reader:
       states[line["state_abbr"]] = line["state_name"]
+  print(states)
 
 def add_leading_zeros(date_arr):
   # some otherwise valid dates have single-digit strings for days/months 1-9
